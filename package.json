@@ -1,12 +1,12 @@
 {
   "name": "picgo-plugin-imgtp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "依赖于ImgTP图床的picgo插件",
   "main": "src/index.js",
   "publishConfig": {
     "access": "public"
   },
-  "homepage": "",
+  "homepage": "https://github.com/Redns/picgo-plugin-imgtp",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "patch": "npm version patch && git push origin master && git push origin --tags",

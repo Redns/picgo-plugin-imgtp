@@ -7,7 +7,7 @@ const config = (ctx) => {
         {
             name: 'email',
             type: 'input',
-            alias: '比邻云帐号',
+            alias: '帐号',
             default: userConfig.email || '',
             message: '帐号不能为空',
             required: true
@@ -15,7 +15,7 @@ const config = (ctx) => {
         {
             name: 'password',
             type: 'input',
-            alias: '比邻云密码',
+            alias: '密码',
             default: userConfig.password || '',
             message: '密码不能为空',
             required: true
