@@ -2,10 +2,7 @@
 
 ## 简介
 
-[ImgTP](https://imgtp.com/) 是国内一家免费公共图床，最大可上传`15MB`的图片。腾讯云域名查询结果显示，该域名注册于`2021年9月7日`，将于`2022年9月7日到期`。
-
-![image-20220214225211177](https://img1.imgtp.com/2022/02/14/nhUfL6gl.png)
-
+[ImgTP](https://imgtp.com/) 是国内一家免费公共图床，最大可上传`15MB`的图片。
 
 
 ## 图床特点
@@ -22,19 +19,19 @@
 
 1. 前往[ImgTP官网](https://imgtp.com/)注册账号
 
-   ![image-20220214225324395](https://img1.imgtp.com/2022/02/14/uUMPHrAt.png)
+   ![https://img1.imgtp.com/2022/02/14/uUMPHrAt.png](https://b.400511.net/usr/uploads/2022/05/2106072050.png)
 
 <br>
 
 2. `GUI`用户可直接在`插件设置`中搜索`imgtp`下载安装
 
-   ![image-20220214225435215](https://img1.imgtp.com/2022/02/14/WeSkOJkV.png)
+   ![https://img1.imgtp.com/2022/02/14/QL7Wa9mA.png](https://b.400511.net/usr/uploads/2022/05/1036558734.png)
 
 <br>
 
 3. 根据实际情况在设置中填写相关信息
-
-   ![image-20220214225710348](https://img1.imgtp.com/2022/02/14/QL7Wa9mA.png)
+   ![](https://b.400511.net/usr/uploads/2022/05/2273589613.png)
+   
 
    - `账号`
    - `密码`
