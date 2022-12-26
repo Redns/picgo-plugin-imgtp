@@ -13,27 +13,17 @@
 
 ## 环境搭建
 
-1. 前往[ImgTP官网](https://imgtp.com/)注册账号
+1. 前往 [ImgTP](https://imgtp.com/) 注册账号
 
-   ![https://img1.imgtp.com/2022/02/14/uUMPHrAt.png](https://b.400511.net/usr/uploads/2022/05/2106072050.png)
+   ![账号注册](https://imagebed.krins.cloud/api/image/0FLD8B48.png)
 
-<br>
+2. `GUI` 用户可直接在 `插件设置` 中搜索 `imgtp` 下载安装
 
-2. `GUI`用户可直接在`插件设置`中搜索`imgtp`下载安装
+   ![image-20221226115541891](https://imagebed.krins.cloud/api/image/0J4JDJ2L.png)
 
-   ![https://img1.imgtp.com/2022/02/14/QL7Wa9mA.png](https://b.400511.net/usr/uploads/2022/05/1036558734.png)
+3. 前往 [ImgTP](https://www.imgtp.com/user/settings.html) 获取 `token`，在插件设置页面填写
 
-<br>
-
-3. 根据实际情况在设置中填写相关信息
-   ![](https://b.400511.net/usr/uploads/2022/05/2273589613.png)
-   
-
-   - `账号`
-   - `密码`
-   - `token`：初次安装插件后自动获取，请勿填写
-
-
+   ![image-20221226115701428](https://imagebed.krins.cloud/api/image/6RJ2RBRD.png)![image-20221226115914112](https://imagebed.krins.cloud/api/image/20P84X80.png)
 
 4. 点击确定，设置完成！
 
