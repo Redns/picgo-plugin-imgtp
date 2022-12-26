@@ -1,6 +1,6 @@
 {
   "name": "picgo-plugin-imgtp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "依赖于ImgTP图床的picgo插件",
   "main": "src/index.js",
   "publishConfig": {
