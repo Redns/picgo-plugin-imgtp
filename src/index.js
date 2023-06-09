@@ -1,5 +1,4 @@
-
-// const Stream = require('stream')
+const Stream = require('stream')
 const FormData = require('form-data')
 
 const config = (ctx) => {
@@ -29,8 +28,8 @@ const config = (ctx) => {
             type: 'password',
             alias: 'Token',
             default: userConfig.token || '',
-            message: '后端上传接口令牌，请在官网设置页面获取',
-            required: true
+            message: '后端上传接口令牌，插件支持自动获取',
+            required: false
         },
         {
             name: 'cookie',
@@ -41,12 +40,12 @@ const config = (ctx) => {
             required: false
         },
         {
-            name: 'api',
+            name: 'mode',
             type: 'list',
-            alias: 'Api',
+            alias: '上传模式',
             choices: ["Front-End", "Back-End"],
-            default: userConfig.api || '',
-            message: '请选择上传使用的接口',
+            default: userConfig.mode || '',
+            message: '请选择上传模式',
             required: true
         }
     ]
@@ -64,6 +63,31 @@ const loginTokenRequestConstruct = () => {
         'resolveWithFullResponse': true
     }
 }   
+
+
+/**
+ * 获取token
+ * @param {帐号} email 
+ * @param {密码} password 
+ */
+const backendTokenRequestConstruct = (email, password) => {
+    let data = new FormData();
+    data.append('email', email);
+    data.append('password', password);
+    data.append('refresh', '0');
+
+    return {
+        method: 'POST',
+        maxBodyLength: Infinity,
+        url: 'https://www.imgtp.com/api/token',
+        headers: { 
+            ...data.getHeaders()
+        },
+        data : data,
+        resolveWithFullResponse: true
+    };
+}
+
 
 /**
  * 登录请求构造
@@ -114,29 +138,27 @@ const loginTokenParse = (loginTokenString) => {
 
 /**
  * 上传图片请求构造
- * @param {API类型} api
+ * @param {上传模式} uploadMode
  * @param {图片名称} imageName
  * @param {图片数据} imgRawData 
  * @param {令牌} token 
  * @param {PHPSESSID} phpsessid
  * @returns 
  */
-const uploadRequestConstruct = (api, imgName, imgRawData, token, cookie) => {
-    switch(api) {
+const uploadRequestConstruct = (uploadMode, imgName, imgRawData, token, cookie) => {
+    switch(uploadMode) {
         case "Front-End":
             let image = new FormData()
-            // TODO Buffer 转 readStream
-            // image.append('image', new Stream.PassThrough().end(imgRawData))
-            image.append('image', imgRawData)
+            image.append('image', (new Stream.PassThrough().end(imgRawData)), imgName)
             image.append('fileId', imgName)
             image.append('initialPreview', '[]')
             image.append('initialPreviewConfig', '[]')
             image.append('initialPreviewThumbTags', '[]')
             return {
                 method: 'POST',
+                maxBodyLength: Infinity,
                 url: 'https://www.imgtp.com/upload/upload.html',
                 headers: { 
-                    'Content-Type':'multipart/form-data',
                     'X-Requested-With': 'XMLHttpRequest', 
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.57sec-ch-ua-platform: "Windows"', 
                     'Origin': 'https://www.imgtp.com', 
@@ -148,7 +170,8 @@ const uploadRequestConstruct = (api, imgName, imgRawData, token, cookie) => {
                     'Sec-Fetch-Dest': 'empty', 
                     'Referer': 'https://www.imgtp.com/', 
                     'Accept': 'application/json, text/javascript, */*; q=0.01', 
-                    'Cookie': cookie
+                    'Cookie': cookie, 
+                    ...image.getHeaders()
                 },
                 data : image,
                 resolveWithFullResponse: true
@@ -182,6 +205,87 @@ const handle = async (ctx) => {
         throw new Error('[IMGTP] 请配置相关信息!')
     }      
 
+    // 核验配置信息    
+    if(userConfig.mode == "Front-End") {
+        // 使用前端接口上传
+        // 判断 Cookie 是否有效，若无效需要重新获取
+        if(!userConfig.cookie){
+            // 局域变量
+            let cookie = ''
+            let loginToken = ''
+            // 获取登录所需的 __token__
+            const loginTokenResponse = await ctx.request(loginTokenRequestConstruct());
+            if(loginTokenResponse.status == 200) {
+                // 保存 Cookie
+                cookie = loginTokenResponse.headers['set-cookie']
+                ctx.saveConfig({
+                    'picBed.imgtp': {
+                        account: userConfig.account,
+                        password: userConfig.password,
+                        token: userConfig.token,
+                        cookie: cookie,
+                        mode: userConfig.mode
+                    }
+                })
+                // 解析 loginToken
+                loginToken = loginTokenParse(loginTokenResponse.data)
+                if(loginToken) {
+                    ctx.log.info(`[IMGTP] 获取 login token 成功 (${loginToken})`)
+                }
+                else {
+                    throw new Error('[IMGTP] 解析 login token 失败')
+                }
+            }
+            else {
+                throw new Error(`[IMGTP] 获取 login token 失败，服务器返回状态码 ${loginTokenResponse.status}`)
+            }
+            // 使用获取到的 __token__ 登录
+            await ctx.request(loginRequestConstruct(cookie, loginToken, userConfig.account, userConfig.password)).then((loginResponse) => {
+                if(loginResponse.status == 200) {
+                    ctx.log.info('[IMGTP] 登陆成功')
+                }
+                else {
+                    throw new Error(`服务器返回状态码 ${loginResponse.statusCode}`)
+                }
+            }).catch((error) => {
+                throw new Error(`[IMGTP] 登录失败，${error.message}`)
+            });
+        }
+    }
+    else if(userConfig.mode == "Back-End") {
+        if(userConfig.token == ''){
+            // 获取token
+            await ctx.request(backendTokenRequestConstruct(userConfig.account, userConfig.password)).then((backendTokenResponse) => {
+                if(backendTokenResponse.status == 200) {
+                    if(backendTokenResponse.data.code == 200) {
+                        ctx.saveConfig({
+                            'picBed.imgtp': {
+                                account: userConfig.account,
+                                password: userConfig.password,
+                                token: backendTokenResponse.data.data.token,
+                                cookie: userConfig.cookie,
+                                mode: userConfig.mode
+                            }
+                        })
+                        ctx.log.info('[IMGTP] 后端 token 获取成功')
+                    }
+                    else {
+                        throw new Error(`${backendTokenResponse.data.msg}`)
+                    }
+                }
+                else {
+                    throw new Error(`服务器返回状态码 ${backendTokenResponse.statusCode}`)
+                }
+            }).catch((error) => {
+                throw new Error(`[IMGTP] 后端 token 获取失败，${error}`)
+            });
+        } 
+    }
+    else {
+        throw new Error(`[IMGTP] 图片上传失败，未知的上传模式 ${userConfig.mode}`)
+    }
+
+    // 上传图片
     const imgList = ctx.output
     for(var i in imgList){
         try{
@@ -190,67 +294,12 @@ const handle = async (ctx) => {
                 img = Buffer.from(imgList[i].base64Image, 'base64')
             }
 
-            if(userConfig.api == "Front-End") {
-                // 使用前端接口上传
-                // 判断 Cookie 是否有效，若无效需要重新获取
-                if(!userConfig.cookie){
-                    // 局域变量
-                    let cookie = ''
-                    let loginToken = ''
-                    // 获取登录所需的 __token__
-                    const loginTokenResponse = await ctx.request(loginTokenRequestConstruct());
-                    ctx.log.info(loginTokenResponse.status)
-                    if(loginTokenResponse.status == 200) {
-                        // 保存 Cookie
-                        cookie = loginTokenResponse.headers['set-cookie']
-                        ctx.saveConfig({
-                            'picBed.imgtp': {
-                                account: userConfig.account,
-                                password: userConfig.password,
-                                token: userConfig.token,
-                                cookie: cookie,
-                                api: userConfig.api
-                            }
-                        })
-                        // 解析 loginToken
-                        loginToken = loginTokenParse(loginTokenResponse.data)
-                        if(loginToken) {
-                            ctx.log.info(`[IMGTP] 获取 login token 成功 (${loginToken})`)
-                        }
-                        else {
-                            throw new Error('[IMGTP] 解析 login token 失败')
-                        }
-                    }
-                    else {
-                        throw new Error(`[IMGTP] 获取 login token 失败，服务器返回状态码 ${loginTokenResponse.status}`)
-                    }
-                    // 使用获取到的 __token__ 登录
-                    await ctx.request(loginRequestConstruct(cookie, loginToken, userConfig.account, userConfig.password)).then((loginResponse) => {
-                        if(loginResponse.status == 200) {
-                            ctx.log.info('[IMGTP] 登陆成功')
-                        }
-                        else {
-                            throw new Error(`[IMGTP] 登录失败，服务器返回状态码 ${loginResponse.statusCode}`)
-                        }
-                    }).catch((error) => {
-                        throw new Error(`[IMGTP] 登录失败，${error}`)
-                    });
-                }
-            }
-            else if(userConfig.api == "Back-End") {
-                // TODO 自动获取 Token
-            }
-            else {
-                throw new Error(`[IMGTP] 图片上传失败，未知的 API 类型 ${userConfig.api}`)
-            }
-            // 上传图片
-            await ctx.request(uploadRequestConstruct(userConfig.api, imgList[i].fileName, img, userConfig.token, userConfig.cookie)).then((uploadResponse) => {
-                var uploadResponseObject = JSON.parse(uploadResponse.data)
-                if(uploadResponseObject.code == 200){
-                    imgList[i]['imgUrl'] = uploadResponseObject.data.url
+            await ctx.request(uploadRequestConstruct(userConfig.mode, imgList[i].fileName, img, userConfig.token, userConfig.cookie)).then((uploadResponse) => {
+                if(uploadResponse.data.code == 200){
+                    imgList[i]['imgUrl'] = uploadResponse.data.data.url
                 }
                 else{
-                    throw new Error(`[IMGTP] 图片上传失败，${uploadResponseObject.msg}`)
+                    throw new Error(`${uploadResponse.data.msg}`)
                 }
             }).catch((error) => {
                 throw new Error(`[IMGTP] ${imgList[i].fileName} 上传失败，${error.message}`)
